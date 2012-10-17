@@ -7,14 +7,16 @@ namespace DotA2Analysis
 {
 	class Analysis
 	{
-		const bool GenerateAttributeConfigurationStatistics = false;
-
 		const int TeamSize = 5;
+
+		bool GenerateAttributeStatistics;
 
 		Dictionary<AttributeConfiguration, SetupStatistics> AttributeStatistics;
 
-		public Analysis(string path)
+		public Analysis(string path, bool generateAttributeConfigurationStatistics)
 		{
+			GenerateAttributeStatistics = generateAttributeConfigurationStatistics;
+
 			AttributeStatistics = new Dictionary<AttributeConfiguration, SetupStatistics>(new AttributeConfigurationComparer());
 			LoadMatches(path);
 		}
@@ -54,7 +56,7 @@ namespace DotA2Analysis
 
 		void ProcessTeam(List<Hero> heroes, bool isRadiant, bool radiantVictory)
 		{
-			if (GenerateAttributeConfigurationStatistics)
+			if (GenerateAttributeStatistics)
 			{
 				AttributeConfiguration attributeConfiguration = new AttributeConfiguration(heroes);
 				SetupStatistics statistics;
@@ -81,7 +83,7 @@ namespace DotA2Analysis
 
 		public void PrintStatistics()
 		{
-			if (GenerateAttributeConfigurationStatistics)
+			if (GenerateAttributeStatistics)
 			{
 				const int attributeStatisticsMinimumOutcomeCount = 50;
 				var evaluations = new List<AttributeConfigurationEvaluation>();
