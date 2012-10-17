@@ -13,9 +13,8 @@ namespace DotA2Analysis
 		RoleEvaluationClass[] RoleEvaluationClasses;
 
 		bool TestMode;
-		bool GenerateAttributeStatistics;
-		bool GenerateRoleStatistics;
 
+		Dictionary<RangeConfiguration, SetupStatistics> RangeStatistics;
 		Dictionary<AttributeConfiguration, SetupStatistics> AttributeStatistics;
 
 		string MatchesDirectory;
@@ -25,17 +24,16 @@ namespace DotA2Analysis
 
 		int ValidSamples;
 
-		public Analysis(string matchesDirectory, string outputPath, bool testMode, bool generateAttributeStatistics, bool generateRoleStatistics)
+		public Analysis(string matchesDirectory, string outputPath, bool testMode)
 		{
 			MatchesDirectory = matchesDirectory;
 			OutputPath = outputPath;
 
 			TestMode = testMode;
-			GenerateAttributeStatistics = generateAttributeStatistics;
-			GenerateRoleStatistics = generateRoleStatistics;
 
 			ValidSamples = 0;
 
+			RangeStatistics = new Dictionary<RangeConfiguration, SetupStatistics>(new RangeConfigurationComparer());
 			AttributeStatistics = new Dictionary<AttributeConfiguration, SetupStatistics>(new AttributeConfigurationComparer());
 
 			InitialiseEvaluationClasses();
@@ -107,23 +105,35 @@ namespace DotA2Analysis
 
 		void ProcessTeam(List<Hero> heroes, bool isRadiant, bool radiantVictory)
 		{
-			if (GenerateAttributeStatistics)
-			{
-				AttributeConfiguration attributeConfiguration = new AttributeConfiguration(heroes);
-				SetupStatistics statistics;
-				if (!AttributeStatistics.TryGetValue(attributeConfiguration, out statistics))
-				{
-					statistics = new SetupStatistics();
-					AttributeStatistics[attributeConfiguration] = statistics;
-				}
-				statistics.ProceessOutcome(isRadiant, radiantVictory);
-			}
+			ProcessRangeStatistics(heroes, isRadiant, radiantVictory);
+			ProcessAttributeStatistics(heroes, isRadiant, radiantVictory);
 
-			if (GenerateRoleStatistics)
+			foreach (var evaluationClass in RoleEvaluationClasses)
+				ProcessTeamRoles(heroes, isRadiant, radiantVictory, evaluationClass.Roles, evaluationClass.Statistics);
+		}
+
+		void ProcessRangeStatistics(List<Hero> heroes, bool isRadiant, bool radiantVictory)
+		{
+			var configuration = new RangeConfiguration(heroes);
+			SetupStatistics statistics;
+			if (!RangeStatistics.TryGetValue(configuration, out statistics))
 			{
-				foreach (var evaluationClass in RoleEvaluationClasses)
-					ProcessTeamRoles(heroes, isRadiant, radiantVictory, evaluationClass.Roles, evaluationClass.Statistics);
+				statistics = new SetupStatistics();
+				RangeStatistics[configuration] = statistics;
 			}
+			statistics.ProceessOutcome(isRadiant, radiantVictory);
+		}
+
+		void ProcessAttributeStatistics(List<Hero> heroes, bool isRadiant, bool radiantVictory)
+		{
+			var configuration = new AttributeConfiguration(heroes);
+			SetupStatistics statistics;
+			if (!AttributeStatistics.TryGetValue(configuration, out statistics))
+			{
+				statistics = new SetupStatistics();
+				AttributeStatistics[configuration] = statistics;
+			}
+			statistics.ProceessOutcome(isRadiant, radiantVictory);
 		}
 
 		void ProcessTeamRoles(List<Hero> heroes, bool isRadiant, bool radiantVictory, HeroRole[] roles, Dictionary<RoleConfiguration, SetupStatistics> container)
@@ -156,14 +166,11 @@ namespace DotA2Analysis
 
 			ScriptWriter.Write("var statistics = new Statistics({0});\n\n", ValidSamples);
 
-			if (GenerateAttributeStatistics)
-				PrintStatistics<AttributeConfiguration, AttributeConfigurationEvaluation>("Hero attribute type composition", AttributeStatistics);
+			PrintStatistics<RangeConfiguration, RangeConfigurationEvaluation>("Melee vs. ranged composition", RangeStatistics);
+			PrintStatistics<AttributeConfiguration, AttributeConfigurationEvaluation>("Hero attribute type composition", AttributeStatistics);
 
-			if (GenerateRoleStatistics)
-			{
-				foreach (var evaluationClass in RoleEvaluationClasses)
-					PrintStatistics<RoleConfiguration, RoleConfigurationEvaluation>(evaluationClass.Description, evaluationClass.Statistics);
-			}
+			foreach (var evaluationClass in RoleEvaluationClasses)
+				PrintStatistics<RoleConfiguration, RoleConfigurationEvaluation>(evaluationClass.Description, evaluationClass.Statistics);
 
 			ScriptWriter.Write("statistics.generateStatistics();");
 

@@ -27,12 +27,14 @@ namespace DotA2Analysis
 	class Hero
 	{
 		public readonly string Name;
+		public readonly bool IsRanged;
 		public readonly HeroAttribute Attribute;
 		public readonly HeroRole[] Roles;
 
-		public Hero(string name, HeroAttribute attribute, params HeroRole[] roles)
+		public Hero(string name, bool isRanged, HeroAttribute attribute, params HeroRole[] roles)
 		{
 			Name = name;
+			IsRanged = isRanged;
 			Attribute = attribute;
 			Roles = roles;
 		}

@@ -15,7 +15,7 @@ namespace DotA2Analysis
 
 			string matchesDirectory = arguments[0];
 			string outputPath = arguments[1];
-			Analysis analysis = new Analysis(matchesDirectory, outputPath, false, true, true);
+			Analysis analysis = new Analysis(matchesDirectory, outputPath, false);
 			analysis.Analyse();
 			analysis.PrintStatistics();
 		}
