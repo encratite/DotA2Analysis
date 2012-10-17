@@ -63,8 +63,13 @@ div.percentage
 p
 {
     width: 60em;
-    margin-bottom: 2em;
+    margin-bottom: 1em;
     text-align: justify;
+}
+
+p.lastParagraph
+{
+    margin-bottom: 3em;
 }
 
 h1
