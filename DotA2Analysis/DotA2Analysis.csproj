@@ -46,6 +46,7 @@
     <Compile Include="ConfigurationEvaluation.cs" />
     <Compile Include="Hero.cs" />
     <Compile Include="Heroes.cs" />
+    <Compile Include="LegConfiguration.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RangeConfiguration.cs" />

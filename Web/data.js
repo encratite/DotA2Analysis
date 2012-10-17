@@ -38,6 +38,16 @@ statistics.addStatistics(
 );
 
 statistics.addStatistics(
+    "Number of heroes without legs",
+    [
+        ["Heroes without legs: 3", 545, 0.533945],
+        ["Heroes without legs: 2", 4248, 0.5188324],
+        ["Heroes without legs: 1", 15131, 0.505188],
+        ["Heroes without legs: 0", 19663, 0.4908203],
+    ]
+);
+
+statistics.addStatistics(
     "Optimal number of carries per team",
     [
         ["Carry: 0", 156, 0.6410257],

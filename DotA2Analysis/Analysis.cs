@@ -16,6 +16,7 @@ namespace DotA2Analysis
 
 		Dictionary<RangeConfiguration, SetupStatistics> RangeStatistics;
 		Dictionary<AttributeConfiguration, SetupStatistics> AttributeStatistics;
+		Dictionary<LegConfiguration, SetupStatistics> LegStatistics;
 
 		string MatchesDirectory;
 		string OutputPath;
@@ -35,6 +36,7 @@ namespace DotA2Analysis
 
 			RangeStatistics = new Dictionary<RangeConfiguration, SetupStatistics>(new RangeConfigurationComparer());
 			AttributeStatistics = new Dictionary<AttributeConfiguration, SetupStatistics>(new AttributeConfigurationComparer());
+			LegStatistics = new Dictionary<LegConfiguration, SetupStatistics>(new LegConfigurationComparer());
 
 			InitialiseEvaluationClasses();
 		}
@@ -107,6 +109,7 @@ namespace DotA2Analysis
 		{
 			ProcessRangeStatistics(heroes, isRadiant, radiantVictory);
 			ProcessAttributeStatistics(heroes, isRadiant, radiantVictory);
+			ProcessLegStatistics(heroes, isRadiant, radiantVictory);
 
 			foreach (var evaluationClass in RoleEvaluationClasses)
 				ProcessTeamRoles(heroes, isRadiant, radiantVictory, evaluationClass.Roles, evaluationClass.Statistics);
@@ -132,6 +135,18 @@ namespace DotA2Analysis
 			{
 				statistics = new SetupStatistics();
 				AttributeStatistics[configuration] = statistics;
+			}
+			statistics.ProceessOutcome(isRadiant, radiantVictory);
+		}
+
+		void ProcessLegStatistics(List<Hero> heroes, bool isRadiant, bool radiantVictory)
+		{
+			var configuration = new LegConfiguration(heroes);
+			SetupStatistics statistics;
+			if (!LegStatistics.TryGetValue(configuration, out statistics))
+			{
+				statistics = new SetupStatistics();
+				LegStatistics[configuration] = statistics;
 			}
 			statistics.ProceessOutcome(isRadiant, radiantVictory);
 		}
@@ -168,6 +183,7 @@ namespace DotA2Analysis
 
 			PrintStatistics<RangeConfiguration, RangeConfigurationEvaluation>("Melee vs. ranged composition", RangeStatistics);
 			PrintStatistics<AttributeConfiguration, AttributeConfigurationEvaluation>("Hero attribute type composition", AttributeStatistics);
+			PrintStatistics<LegConfiguration, LegConfigurationEvaluation>("Number of heroes without legs", LegStatistics);
 
 			foreach (var evaluationClass in RoleEvaluationClasses)
 				PrintStatistics<RoleConfiguration, RoleConfigurationEvaluation>(evaluationClass.Description, evaluationClass.Statistics);
