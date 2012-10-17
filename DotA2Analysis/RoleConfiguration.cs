@@ -60,15 +60,14 @@ namespace DotA2Analysis
 		}
 	}
 
-	class RoleConfigurationEvaluation : IComparable
+	class RoleConfigurationEvaluation : ConfigurationEvaluation, IComparable
 	{
 		public readonly RoleConfiguration Configuration;
-		public readonly SetupStatistics Statistics;
 
 		public RoleConfigurationEvaluation(RoleConfiguration configuration, SetupStatistics statistics)
+			: base(configuration.GetDescription(), statistics)
 		{
 			Configuration = configuration;
-			Statistics = statistics;
 		}
 
 		public int CompareTo(object other)

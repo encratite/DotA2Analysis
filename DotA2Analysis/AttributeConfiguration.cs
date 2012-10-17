@@ -41,7 +41,7 @@ namespace DotA2Analysis
 				IntelligenceCount == configuration.IntelligenceCount;
 		}
 
-		public string GetString()
+		public string GetDescription()
 		{
 			return string.Format("Strength: {0}, Agility: {1}, Intelligence: {2}", StrengthCount, AgilityCount, IntelligenceCount);
 		}
@@ -61,15 +61,14 @@ namespace DotA2Analysis
 		}
 	}
 
-	class AttributeConfigurationEvaluation : IComparable
+	class AttributeConfigurationEvaluation : ConfigurationEvaluation, IComparable
 	{
 		public AttributeConfiguration Configuration;
-		public SetupStatistics Statistics;
 
 		public AttributeConfigurationEvaluation(AttributeConfiguration configuration, SetupStatistics statistics)
+			: base(configuration.GetDescription(), statistics)
 		{
 			Configuration = configuration;
-			Statistics = statistics;
 		}
 
 		public int CompareTo(object other)

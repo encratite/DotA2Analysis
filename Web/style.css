@@ -37,9 +37,13 @@ a:hover
 table
 {
     margin-bottom: 2em;
-    border: 1px solid #e0e0e0;
-    width: 40em;
     border-collapse: collapse;
+}
+
+th
+{
+    text-align: left;
+    padding-left: 1em;
 }
 
 td
@@ -53,11 +57,17 @@ td.description
     width: 18em;
 }
 
-div.percentage
+td.percentage
+{
+    width: 15em;
+}
+
+span.percentage
 {
     border: 1px solid black;
     background-color: #fffcf2;
     padding-left: 4px;
+    display: block;
 }
 
 p

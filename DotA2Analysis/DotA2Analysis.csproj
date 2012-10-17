@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="Analysis.cs" />
     <Compile Include="AttributeConfiguration.cs" />
+    <Compile Include="ConfigurationEvaluation.cs" />
     <Compile Include="Hero.cs" />
     <Compile Include="Heroes.cs" />
     <Compile Include="Program.cs" />

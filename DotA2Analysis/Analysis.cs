@@ -8,9 +8,11 @@ namespace DotA2Analysis
 	class Analysis
 	{
 		const int TeamSize = 5;
+		const int MinimumOutcomeCount = 50;
 
 		RoleEvaluationClass[] RoleEvaluationClasses;
 
+		bool TestMode;
 		bool GenerateAttributeStatistics;
 		bool GenerateRoleStatistics;
 
@@ -23,11 +25,12 @@ namespace DotA2Analysis
 
 		int ValidSamples;
 
-		public Analysis(string matchesDirectory, string outputPath, bool generateAttributeStatistics, bool generateRoleStatistics)
+		public Analysis(string matchesDirectory, string outputPath, bool testMode, bool generateAttributeStatistics, bool generateRoleStatistics)
 		{
 			MatchesDirectory = matchesDirectory;
 			OutputPath = outputPath;
 
+			TestMode = testMode;
 			GenerateAttributeStatistics = generateAttributeStatistics;
 			GenerateRoleStatistics = generateRoleStatistics;
 
@@ -71,8 +74,8 @@ namespace DotA2Analysis
 			string[] files = Directory.GetFiles(path);
 			foreach (string file in files)
 			{
-				//if (progress > 3000)
-				//	break;
+				if (TestMode && progress > 3000)
+					break;
 				if (progress % 100 == 1)
 					Console.WriteLine("Loading match {0}/{1}", progress, files.Length);
 				string matchData = File.ReadAllText(file);
@@ -154,12 +157,12 @@ namespace DotA2Analysis
 			ScriptWriter.Write("var statistics = new Statistics({0});\n\n", ValidSamples);
 
 			if (GenerateAttributeStatistics)
-				PrintAttributeStatistics("Hero attribute type composition");
+				PrintStatistics<AttributeConfiguration, AttributeConfigurationEvaluation>("Hero attribute type composition", AttributeStatistics);
 
 			if (GenerateRoleStatistics)
 			{
 				foreach (var evaluationClass in RoleEvaluationClasses)
-					PrintRoleStatistics(evaluationClass.Description, evaluationClass.Statistics);
+					PrintStatistics<RoleConfiguration, RoleConfigurationEvaluation>(evaluationClass.Description, evaluationClass.Statistics);
 			}
 
 			ScriptWriter.Write("statistics.generateStatistics();");
@@ -177,54 +180,31 @@ namespace DotA2Analysis
 			ScriptWriter.Write("    ]\n);\n\n");
 		}
 
-		void WriteScriptData(string description, float winRatio)
+		void WriteScriptData(string description, int samples, float winRatio)
 		{
-			string output = string.Format("        [\"{0}\", {1}],\n", description, winRatio);
+			string output = string.Format("        [\"{0}\", {1}, {2}],\n", description, samples, winRatio);
 			ScriptWriter.Write(output);
 		}
 
-		void PrintAttributeStatistics(string description)
+		void PrintStatistics<KeyType, EvaluationType>(string description, Dictionary<KeyType, SetupStatistics> container) where EvaluationType : ConfigurationEvaluation
 		{
 			WriteScriptIntro(description);
 
-			const int attributeStatisticsMinimumOutcomeCount = 50;
-			var evaluations = new List<AttributeConfigurationEvaluation>();
-			foreach (var pair in AttributeStatistics)
-			{
-				var configuration = pair.Key;
-				var statistics = pair.Value;
-				if (statistics.GetGames() < attributeStatisticsMinimumOutcomeCount)
-					continue;
-				var evaluation = new AttributeConfigurationEvaluation(configuration, statistics);
-				evaluations.Add(evaluation);
-			}
-			evaluations.Sort();
-
-			foreach (var evaluation in evaluations)
-				WriteScriptData(evaluation.Configuration.GetString(), evaluation.Statistics.GetWinRatio());
-
-			WriteScriptOutro();
-		}
-
-		void PrintRoleStatistics(string description, Dictionary<RoleConfiguration, SetupStatistics> container)
-		{
-			WriteScriptIntro(description);
-
-			const int minimumOutcomeCount = 50;
-			var evaluations = new List<RoleConfigurationEvaluation>();
+			var evaluations = new List<EvaluationType>();
 			foreach (var pair in container)
 			{
 				var configuration = pair.Key;
 				var statistics = pair.Value;
-				if (statistics.GetGames() < minimumOutcomeCount)
+				if (statistics.GetGames() < MinimumOutcomeCount)
 					continue;
-				var evaluation = new RoleConfigurationEvaluation(configuration, statistics);
+				//var evaluation = new EvaluationType(configuration, statistics);
+				EvaluationType evaluation = (EvaluationType)Activator.CreateInstance(typeof(EvaluationType), configuration, statistics);
 				evaluations.Add(evaluation);
 			}
 			evaluations.Sort();
 
 			foreach (var evaluation in evaluations)
-				WriteScriptData(evaluation.Configuration.GetDescription(), evaluation.Statistics.GetWinRatio());
+				WriteScriptData(evaluation.Description, evaluation.Statistics.GetGames(), evaluation.Statistics.GetWinRatio());
 
 			WriteScriptOutro();
 		}

@@ -119,3 +119,8 @@ function paragraph()
 {
     return createElement('p', parseArguments(arguments));
 }
+
+function span()
+{
+    return createElement('span', parseArguments(arguments));
+}
