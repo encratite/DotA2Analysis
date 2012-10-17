@@ -42,10 +42,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Analysis.cs" />
+    <Compile Include="AttributeConfiguration.cs" />
     <Compile Include="Hero.cs" />
     <Compile Include="Heroes.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SetupStatistics.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

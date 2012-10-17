@@ -5,117 +5,12 @@ using System.Text.RegularExpressions;
 
 namespace DotA2Analysis
 {
-	class AttributeConfiguration
-	{
-		public readonly int StrengthCount;
-		public readonly int AgilityCount;
-		public readonly int IntelligenceCount;
-
-		public AttributeConfiguration(List<Hero> team)
-		{
-			StrengthCount = 0;
-			AgilityCount = 0;
-			IntelligenceCount = 0;
-			foreach (Hero hero in team)
-			{
-				switch (hero.Attribute)
-				{
-					case HeroAttribute.Strength:
-						StrengthCount++;
-						break;
-
-					case HeroAttribute.Agility:
-						AgilityCount++;
-						break;
-
-					case HeroAttribute.Intelligence:
-						IntelligenceCount++;
-						break;
-				}
-			}
-		}
-
-		public bool Equals(AttributeConfiguration configuration)
-		{
-			return
-				StrengthCount == configuration.StrengthCount &&
-				AgilityCount == configuration.AgilityCount &&
-				IntelligenceCount == configuration.IntelligenceCount;
-		}
-
-		public string GetString()
-		{
-			return string.Format("Strength: {0}, Agility: {1}, Intelligence: {2}", StrengthCount, AgilityCount, IntelligenceCount);
-		}
-	}
-
-	class AttributeConfigurationComparer : IEqualityComparer<AttributeConfiguration>
-	{
-		public bool Equals(AttributeConfiguration x, AttributeConfiguration y)
-		{
-			return x.Equals(y);
-		}
-
-		public int GetHashCode(AttributeConfiguration configuration)
-		{
-			int hash = configuration.StrengthCount | (configuration.AgilityCount << 3) | (configuration.IntelligenceCount << 6);
-			return hash;
-		}
-	}
-
-	class AttributeConfigurationEvaluation : IComparable
-	{
-		public AttributeConfiguration Configuration;
-		public SetupStatistics Statistics;
-
-		public AttributeConfigurationEvaluation(AttributeConfiguration configuration, SetupStatistics statistics)
-		{
-			Configuration = configuration;
-			Statistics = statistics;
-		}
-
-		public int CompareTo(object other)
-		{
-			if (other == null)
-				return 1;
-			var evaluation = other as AttributeConfigurationEvaluation;
-			return - Statistics.GetWinRatio().CompareTo(evaluation.Statistics.GetWinRatio());
-		}
-	}
-
-	class SetupStatistics
-	{
-		public int Wins;
-		public int Losses;
-
-		public SetupStatistics()
-		{
-			Wins = 0;
-			Losses = 0;
-		}
-
-		public void ProceessOutcome(bool isRadiant, bool radiantVictory)
-		{
-			if ((isRadiant && radiantVictory) || (!isRadiant && !radiantVictory))
-				Wins++;
-			else
-				Losses++;
-		}
-
-		public float GetWinRatio()
-		{
-			return (float)Wins / GetGames();
-		}
-
-		public int GetGames()
-		{
-			return Wins + Losses;
-		}
-	}
-
 	class Analysis
 	{
+		const bool GenerateAttributeConfigurationStatistics = false;
+
 		const int TeamSize = 5;
+
 		Dictionary<AttributeConfiguration, SetupStatistics> AttributeStatistics;
 
 		public Analysis(string path)
@@ -159,14 +54,17 @@ namespace DotA2Analysis
 
 		void ProcessTeam(List<Hero> heroes, bool isRadiant, bool radiantVictory)
 		{
-			AttributeConfiguration attributeConfiguration = new AttributeConfiguration(heroes);
-			SetupStatistics statistics;
-			if (!AttributeStatistics.TryGetValue(attributeConfiguration, out statistics))
+			if (GenerateAttributeConfigurationStatistics)
 			{
-				statistics = new SetupStatistics();
-				AttributeStatistics[attributeConfiguration] = statistics;
+				AttributeConfiguration attributeConfiguration = new AttributeConfiguration(heroes);
+				SetupStatistics statistics;
+				if (!AttributeStatistics.TryGetValue(attributeConfiguration, out statistics))
+				{
+					statistics = new SetupStatistics();
+					AttributeStatistics[attributeConfiguration] = statistics;
+				}
+				statistics.ProceessOutcome(isRadiant, radiantVictory);
 			}
-			statistics.ProceessOutcome(isRadiant, radiantVictory);
 		}
 
 		List<Hero> GetTeamHeroes(MatchCollection matches, int offset)
@@ -183,22 +81,25 @@ namespace DotA2Analysis
 
 		public void PrintStatistics()
 		{
-			const int attributeStatisticsMinimumOutcomeCount = 50;
-			var evaluations = new List<AttributeConfigurationEvaluation>();
-			foreach (var pair in AttributeStatistics)
+			if (GenerateAttributeConfigurationStatistics)
 			{
-				var configuration = pair.Key;
-				var statistics = pair.Value;
-				if (statistics.GetGames() < attributeStatisticsMinimumOutcomeCount)
-					continue;
-				var evaluation = new AttributeConfigurationEvaluation(configuration, statistics);
-				evaluations.Add(evaluation);
-			}
-			evaluations.Sort();
+				const int attributeStatisticsMinimumOutcomeCount = 50;
+				var evaluations = new List<AttributeConfigurationEvaluation>();
+				foreach (var pair in AttributeStatistics)
+				{
+					var configuration = pair.Key;
+					var statistics = pair.Value;
+					if (statistics.GetGames() < attributeStatisticsMinimumOutcomeCount)
+						continue;
+					var evaluation = new AttributeConfigurationEvaluation(configuration, statistics);
+					evaluations.Add(evaluation);
+				}
+				evaluations.Sort();
 
-			foreach (var evaluation in evaluations)
-			{
-				Console.WriteLine("{0} - {1:F1}%", evaluation.Configuration.GetString(), evaluation.Statistics.GetWinRatio() * 100);
+				foreach (var evaluation in evaluations)
+				{
+					Console.WriteLine("{0} - {1:F1}%", evaluation.Configuration.GetString(), evaluation.Statistics.GetWinRatio() * 100);
+				}
 			}
 		}
 	}
