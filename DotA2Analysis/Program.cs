@@ -14,7 +14,7 @@ namespace DotA2Analysis
 			}
 
 			string path = arguments[0];
-			Analysis analysis = new Analysis(path, false);
+			Analysis analysis = new Analysis(path, false, true);
 			analysis.PrintStatistics();
 		}
 	}

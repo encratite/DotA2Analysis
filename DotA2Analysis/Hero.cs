@@ -14,17 +14,14 @@ namespace DotA2Analysis
 	{
 		Carry,
 		Disabler,
+		Durable,
 		Escape,
-		Ganker,
 		Initiator,
-		Nuker,
 		Jungler,
 		LaneSupport,
+		Nuker,
 		Pusher,
-		Roamer,
-		SemiCarry,
 		Support,
-		Tank,
 	}
 
 	class Hero
@@ -43,6 +40,7 @@ namespace DotA2Analysis
 		public static Hero Get(string name)
 		{
 			name = name.Replace("&#x27;", "'");
+			name = name.Replace("Magnataur", "Magnus");
 			foreach(Hero hero in Heroes.DotA2Heroes)
 			{
 				if(hero.Name == name)
