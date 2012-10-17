@@ -6,15 +6,17 @@ namespace DotA2Analysis
 	{
 		static void Main(string[] arguments)
 		{
-			if (arguments.Length != 1)
+			if (arguments.Length != 2)
 			{
 				Console.WriteLine("Usage:");
-				Console.WriteLine("{0} <path to directory containg match files>");
+				Console.WriteLine("{0} <path to directory containing match files> <path to output file>");
 				return;
 			}
 
-			string path = arguments[0];
-			Analysis analysis = new Analysis(path, false, true);
+			string matchesDirectory = arguments[0];
+			string outputPath = arguments[1];
+			Analysis analysis = new Analysis(matchesDirectory, outputPath, true, true);
+			analysis.Analyse();
 			analysis.PrintStatistics();
 		}
 	}

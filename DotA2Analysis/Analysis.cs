@@ -5,95 +5,6 @@ using System.Text.RegularExpressions;
 
 namespace DotA2Analysis
 {
-	class RoleConfiguration
-	{
-		public Dictionary<HeroRole, int> RoleCounts;
-
-		public RoleConfiguration(List<Hero> team, HeroRole[] rolesConsidered)
-		{
-			RoleCounts = new Dictionary<HeroRole, int>();
-			foreach (HeroRole role in rolesConsidered)
-				RoleCounts[role] = 0;
-			foreach (Hero hero in team)
-			{
-				foreach (HeroRole role in rolesConsidered)
-				{
-					if(Array.IndexOf(hero.Roles, role) != -1)
-						RoleCounts[role]++;
-				}
-			}
-		}
-
-		public bool Equals(RoleConfiguration configuration)
-		{
-			foreach (var pair in RoleCounts)
-			{
-				if (pair.Value != configuration.RoleCounts[pair.Key])
-					return false;
-			}
-			return true;
-		}
-
-		public string GetDescription()
-		{
-			var units = new List<string>();
-			foreach (var pair in RoleCounts)
-				units.Add(string.Format("{0}: {1}", pair.Key.ToString(), pair.Value));
-			return string.Join(", ", units);
-		}
-	}
-
-	class RoleConfigurationComparer : IEqualityComparer<RoleConfiguration>
-	{
-		public bool Equals(RoleConfiguration x, RoleConfiguration y)
-		{
-			return x.Equals(y);
-		}
-
-		public int GetHashCode(RoleConfiguration configuration)
-		{
-			int hash = 0;
-			foreach (var pair in configuration.RoleCounts)
-			{
-				hash <<= 3;
-				hash |= pair.Value;
-			}
-			return hash;
-		}
-	}
-
-	class RoleConfigurationEvaluation : IComparable
-	{
-		public readonly RoleConfiguration Configuration;
-		public readonly SetupStatistics Statistics;
-
-		public RoleConfigurationEvaluation(RoleConfiguration configuration, SetupStatistics statistics)
-		{
-			Configuration = configuration;
-			Statistics = statistics;
-		}
-
-		public int CompareTo(object other)
-		{
-			var evaluation = other as RoleConfigurationEvaluation;
-			return -Statistics.GetWinRatio().CompareTo(evaluation.Statistics.GetWinRatio());
-		}
-	}
-
-	class RoleEvaluationClass
-	{
-		public readonly string Description;
-		public readonly HeroRole[] Roles;
-		public readonly Dictionary<RoleConfiguration, SetupStatistics> Statistics;
-
-		public RoleEvaluationClass(string description, HeroRole[] roles)
-		{
-			Description = description;
-			Roles = roles;
-			Statistics = new Dictionary<RoleConfiguration, SetupStatistics>(new RoleConfigurationComparer());
-		}
-	}
-
 	class Analysis
 	{
 		const int TeamSize = 5;
@@ -105,13 +16,30 @@ namespace DotA2Analysis
 
 		Dictionary<AttributeConfiguration, SetupStatistics> AttributeStatistics;
 
-		public Analysis(string path, bool generateAttributeStatistics, bool generateRoleStatistics)
+		string MatchesDirectory;
+		string OutputPath;
+
+		StreamWriter ScriptWriter;
+
+		int ValidSamples;
+
+		public Analysis(string matchesDirectory, string outputPath, bool generateAttributeStatistics, bool generateRoleStatistics)
 		{
+			MatchesDirectory = matchesDirectory;
+			OutputPath = outputPath;
+
 			GenerateAttributeStatistics = generateAttributeStatistics;
 			GenerateRoleStatistics = generateRoleStatistics;
 
+			ValidSamples = 0;
+
 			AttributeStatistics = new Dictionary<AttributeConfiguration, SetupStatistics>(new AttributeConfigurationComparer());
 
+			InitialiseEvaluationClasses();
+		}
+
+		void InitialiseEvaluationClasses()
+		{
 			RoleEvaluationClasses = new RoleEvaluationClass[]
 			{
 				new RoleEvaluationClass("Optimal number of carries per team", new HeroRole[] { HeroRole.Carry }),
@@ -130,8 +58,11 @@ namespace DotA2Analysis
 				new RoleEvaluationClass("Optimal number of carries and lane supports per team", new HeroRole[] { HeroRole.Carry, HeroRole.LaneSupport }),
 				new RoleEvaluationClass("Optimal number of carries, disablers and initiators per team", new HeroRole[] { HeroRole.Carry, HeroRole.Disabler, HeroRole.Initiator }),
 			};
-			
-			LoadMatches(path);
+		}
+
+		public void Analyse()
+		{
+			LoadMatches(MatchesDirectory);
 		}
 
 		void LoadMatches(string path)
@@ -154,7 +85,10 @@ namespace DotA2Analysis
 		{
 			Match outcomeMatch = Regex.Match(matchData, "<div class=\"match-result\"><span class=\"team .+?\">(.+?) Victory</span></div>");
 			if (!outcomeMatch.Success)
-				throw new Exception("Unable to determine the result of the match");
+			{
+				//throw new Exception("Unable to determine the result of the match");
+				return;
+			}
 			string teamString = outcomeMatch.Groups[1].Value;
 			bool radiantVictory = teamString == "Radiant";
 			Regex heroPattern = new Regex("a href=\"/heroes/.+?\" class=\"hero-link\">(.+?)</a>", RegexOptions.Singleline);
@@ -165,6 +99,7 @@ namespace DotA2Analysis
 			var direHeroes = GetTeamHeroes(matches, TeamSize);
 			ProcessTeam(radiantHeroes, true, radiantVictory);
 			ProcessTeam(direHeroes, false, radiantVictory);
+			ValidSamples += 2;
 		}
 
 		void ProcessTeam(List<Hero> heroes, bool isRadiant, bool radiantVictory)
@@ -214,37 +149,66 @@ namespace DotA2Analysis
 
 		public void PrintStatistics()
 		{
-			if (GenerateAttributeStatistics)
-			{
-				const int attributeStatisticsMinimumOutcomeCount = 50;
-				var evaluations = new List<AttributeConfigurationEvaluation>();
-				foreach (var pair in AttributeStatistics)
-				{
-					var configuration = pair.Key;
-					var statistics = pair.Value;
-					if (statistics.GetGames() < attributeStatisticsMinimumOutcomeCount)
-						continue;
-					var evaluation = new AttributeConfigurationEvaluation(configuration, statistics);
-					evaluations.Add(evaluation);
-				}
-				evaluations.Sort();
+			ScriptWriter = new StreamWriter(OutputPath);
 
-				foreach (var evaluation in evaluations)
-				{
-					Console.WriteLine("{0} - {1:F1}%", evaluation.Configuration.GetString(), evaluation.Statistics.GetWinRatio() * 100);
-				}
-			}
+			ScriptWriter.Write("var statistics = new Statistics({0});\n\n", ValidSamples);
+
+			if (GenerateAttributeStatistics)
+				PrintAttributeStatistics("Hero attribute type composition");
 
 			if (GenerateRoleStatistics)
 			{
 				foreach (var evaluationClass in RoleEvaluationClasses)
 					PrintRoleStatistics(evaluationClass.Description, evaluationClass.Statistics);
 			}
+
+			ScriptWriter.Write("statistics.generateStatistics();");
+
+			ScriptWriter.Close();
 		}
 
-		public void PrintRoleStatistics(string description, Dictionary<RoleConfiguration, SetupStatistics> container)
+		void WriteScriptIntro(string description)
 		{
-			Console.WriteLine("{0}:", description);
+			ScriptWriter.Write("statistics.addStatistics(\n    \"{0}\",\n    [\n", description);
+		}
+
+		void WriteScriptOutro()
+		{
+			ScriptWriter.Write("    ]\n);\n\n");
+		}
+
+		void WriteScriptData(string description, float winRatio)
+		{
+			string output = string.Format("        [\"{0}\", {1}],\n", description, winRatio);
+			ScriptWriter.Write(output);
+		}
+
+		void PrintAttributeStatistics(string description)
+		{
+			WriteScriptIntro(description);
+
+			const int attributeStatisticsMinimumOutcomeCount = 50;
+			var evaluations = new List<AttributeConfigurationEvaluation>();
+			foreach (var pair in AttributeStatistics)
+			{
+				var configuration = pair.Key;
+				var statistics = pair.Value;
+				if (statistics.GetGames() < attributeStatisticsMinimumOutcomeCount)
+					continue;
+				var evaluation = new AttributeConfigurationEvaluation(configuration, statistics);
+				evaluations.Add(evaluation);
+			}
+			evaluations.Sort();
+
+			foreach (var evaluation in evaluations)
+				WriteScriptData(evaluation.Configuration.GetString(), evaluation.Statistics.GetWinRatio());
+
+			WriteScriptOutro();
+		}
+
+		void PrintRoleStatistics(string description, Dictionary<RoleConfiguration, SetupStatistics> container)
+		{
+			WriteScriptIntro(description);
 
 			const int minimumOutcomeCount = 50;
 			var evaluations = new List<RoleConfigurationEvaluation>();
@@ -260,11 +224,9 @@ namespace DotA2Analysis
 			evaluations.Sort();
 
 			foreach (var evaluation in evaluations)
-			{
-				Console.WriteLine("{0} - {1:F1}%", evaluation.Configuration.GetDescription(), evaluation.Statistics.GetWinRatio() * 100);
-			}
+				WriteScriptData(evaluation.Configuration.GetDescription(), evaluation.Statistics.GetWinRatio());
 
-			Console.WriteLine("");
+			WriteScriptOutro();
 		}
 	}
 }

@@ -1,0 +1,79 @@
+*
+{
+    font-family: "Palatino Linotype", sans-serif;
+    font-size: medium;
+    margin: 0;
+    padding: 0;
+}
+
+body
+{
+    padding: 2em;
+}
+
+
+a
+{
+    color: #008aff;
+    text-decoration: none;
+    background: none;
+}
+
+a:visited
+{
+    color: #0078de;
+}
+
+a:active
+{
+    color: #30a0ff;
+}
+
+a:hover
+{
+    color: #ffa200;
+}
+
+table
+{
+    margin-bottom: 2em;
+    border: 1px solid #e0e0e0;
+    width: 40em;
+    border-collapse: collapse;
+}
+
+td
+{
+    padding: 1px 4px 1px 4px;
+    border: 1px solid #e0e0e0;
+}
+
+td.description
+{
+    width: 18em;
+}
+
+div.percentage
+{
+    border: 1px solid black;
+    background-color: #fffcf2;
+    padding-left: 4px;
+}
+
+p
+{
+    width: 60em;
+    margin-bottom: 2em;
+    text-align: justify;
+}
+
+h1
+{
+    font-size: 1.5em;
+    margin-bottom: 1em;
+}
+
+#sampleCount
+{
+    font-weight: bold;
+}
