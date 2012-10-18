@@ -124,3 +124,18 @@ function span()
 {
     return createElement('span', parseArguments(arguments));
 }
+
+function header1()
+{
+    return createElement('h1', parseArguments(arguments));
+}
+
+function header2()
+{
+    return createElement('h2', parseArguments(arguments));
+}
+
+function header3()
+{
+    return createElement('h3', parseArguments(arguments));
+}

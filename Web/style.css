@@ -88,6 +88,13 @@ h1
     margin-bottom: 1em;
 }
 
+h2
+{
+    font-size: 1.2em;
+    margin-bottom: 0.8em;
+    text-decoration: underline;
+}
+
 #sampleCount
 {
     font-weight: bold;

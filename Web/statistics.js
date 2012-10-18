@@ -74,7 +74,9 @@ function generateTable(title, samples)
         );
         rows.push(row);
     });
+    var header = header2(title);
     var output = table(rows);
+    document.body.appendChild(header);
     document.body.appendChild(output);
 }
 
